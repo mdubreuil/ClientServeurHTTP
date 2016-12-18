@@ -12,9 +12,10 @@ import http.Server;
  */
 public class Test
 {
-    public static void main(String[] args)
-    {
-        Server serverHTTP = new Server(1030, 5);
-        Client client = new Client("localhost", 1030);
-    }
+//    public static void main(String[] args)
+//    {
+//        Server serverHTTP = new Server(1030, 5); // 134.214.117.25
+//        serverHTTP.run();
+//        //Client client = new Client("localhost", 1030);
+//    }
 }
