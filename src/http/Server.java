@@ -52,7 +52,6 @@ public class Server extends Thread
 
         try {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // default buffer in size : 2048 octet
-//            out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream())); // default buffer out size : 512 octet
             out = new DataOutputStream(clientSocket.getOutputStream()); // default buffer out size : 512 octet
 
             while (true) {
@@ -61,17 +60,23 @@ public class Server extends Thread
             
                 // Read request
                 while ((line = in.readLine()) != null) {
-                    System.out.println(line);
                     requestString += line + "\r\n";
                     if (line.isEmpty()) {
                         break;
                     }
                 }
+
                 if (requestString.isEmpty()) {
-                    System.err.println("Erreur de réception de la requète client");
+                    //System.err.println("Erreur de réception de la requète client");
+                    // Que faire lorsque le client n'a plus envoyé de requète depuis longtemps ?
+                    // - Arréter la communication : return;
+                    // - Attendre :
                     continue;
                 }
                 
+                System.out.println("-> From client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
+                System.out.println(requestString);
+
                 // Création de la requète HTTP
                 RequestHTTP request = new RequestHTTP(requestString);
 
@@ -95,7 +100,6 @@ public class Server extends Thread
                             response.setCode(Http.CODE_FORBIDDEN);
                         } else {
                             // Read resource
-                            System.out.println("Read data");
                             long dataSize = resourceFile.length();
                             byte[] data = new byte[(int) dataSize + 1];
                             int dataReadSize;
@@ -104,8 +108,8 @@ public class Server extends Thread
                             do {
                                 dataReadSize = fileReader.read(data);
                             } while (dataReadSize != -1);
+                            fileReader.close();
 
-                            System.out.println("Set response content type");
                             String[] resourcePathArray = request.getResource().split("\\.");
                             String extension = resourcePathArray[resourcePathArray.length - 1];
                             
@@ -114,14 +118,13 @@ public class Server extends Thread
                         }
                         
                         // Send Server GET response
-                        System.out.println("send response");
                         out.writeBytes(response.toString());
                         out.writeBytes("\r\n");
                         out.write(response.getContent());
                         out.flush();
                         break;
                     case Http.METHOD_POST:
-                        System.out.println("POST request");
+                        System.out.println("POST request : non pris en charge");
                         break;
                     default:
                         System.out.println("Not a GET or POST request");
@@ -129,21 +132,20 @@ public class Server extends Thread
                 }
 
                 if (request.getConnection().equalsIgnoreCase(Http.CONNECTION_CLOSE)) {
-                    // on ferme les flux.
+                    // Demande de fin de connexion par le client
                     System.err.println("Connexion avec le client terminée");
                     out.close();
                     in.close();
                     clientSocket.close();
+
+                    return;
                 }
             }
             
         } catch (IOException ex) {
             if(ex instanceof SocketException) {
-                // Si le client interrompt la connection
+                // Connexion interrompue par le client
                 System.err.println("Connexion avec le client terminée");
-//                out.close();
-//                in.close();
-//                clientSocket.close();
             }
             // Traiter l'interruption de la connexion par le client
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);

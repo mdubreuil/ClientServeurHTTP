@@ -1,7 +1,6 @@
 
 package http;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,9 +59,9 @@ public class RequestHTTP
                 case Http.CONTENT_TYPE:
                     this.contentType = headerValue;
                     break;
-                default:
-                    System.err.println("Unknown header : " + requestArray[i]);
-                    break;
+//                default:
+//                    System.err.println("Unknown header : " + requestArray[i]);
+//                    break;
             }
         }
         

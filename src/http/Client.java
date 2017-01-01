@@ -1,14 +1,10 @@
 
 package http;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -63,7 +59,6 @@ public class Client implements Runnable
     {
         try {
             // Client GET request
-            
             String hostName = socket.getInetAddress().getHostName();
             int port = socket.getPort();
             out.write("GET " + absoluteRemoteFilePath + " HTTP/1.1\r\n");

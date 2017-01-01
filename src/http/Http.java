@@ -1,7 +1,8 @@
 
 package http;
 
-public class Http {
+public class Http
+{
     // Protocol & methods
     public static final String HTTP1_1 = "HTTP/1.1";
     public static final String METHOD_GET = "GET";

@@ -28,7 +28,9 @@ public class ResponseHTTP
 
         public static String getValueByExtension(String extension)
         {
-            if (extension.isEmpty()) return TEXT_PLAIN.value;
+            String contentType = "charset=utf-8;";
+
+            if (extension.isEmpty()) return TEXT_PLAIN.value + ";" + contentType;
 //            if (extension == null || extension.equals("") || extension.equals("."))
 //                    return "text/html";
 
@@ -38,9 +40,9 @@ public class ResponseHTTP
             for (ContentType ct : ContentType.values())
                 for (String ext : ct.extension)
                     if (ext.equalsIgnoreCase(extension))
-                        return ct.value;
+                        return ct.value + ";" + contentType;
 
-            return TEXT_HTML.value;
+            return TEXT_HTML.value + ";" + contentType;
         }
     }
     
@@ -82,14 +84,7 @@ public class ResponseHTTP
         s += Http.HTTP1_1 + " " + this.code + "\r\n";
         s += Http.CONTENT_TYPE + ": " + this.contentType + "\r\n";
         s += Http.CONTENT_LENGTH + ": " + this.content.length + "\r\n";
-//        s += "\r\n";
-//        s += new String(this.content);
-        
+
         return s;
-        //                        out.writeBytes(HTTP1_1 + " " + codeResponse + "\r\n");
-//                        out.writeBytes("Content-Type: " + contentType + "\r\n");
-//                        out.writeBytes("Content-Length: " + dataSize + "\r\n");
-//                        out.writeBytes("\r\n");
-//                        out.write(data);
     }
 }
