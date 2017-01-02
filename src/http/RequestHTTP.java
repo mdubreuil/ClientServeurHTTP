@@ -1,8 +1,12 @@
 
 package http;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class RequestHTTP
 {
@@ -13,7 +17,8 @@ public class RequestHTTP
     private String connection = "";
     private String contentType = "";
     private int contentLength = 0;
-    private String content = "";
+    private byte[] content = new byte[]{};
+    private String host = "";
     
     public RequestHTTP(String request)
     {
@@ -31,7 +36,12 @@ public class RequestHTTP
         if (this.resource.contains("?"))
         {
             String[] resourceArray = this.resource.split("\\?");
-            this.resource = resourceArray[0];
+            try {
+                this.resource = URLDecoder.decode(resourceArray[0], "UTF-8");
+            } catch (UnsupportedEncodingException ex) {
+                System.out.println(this.resource);
+                Logger.getLogger(RequestHTTP.class.getName()).log(Level.SEVERE, null, ex);
+            }
 
             String[] paramsArray = resourceArray[1].split("&");
             for (String param : paramsArray) {
@@ -68,9 +78,15 @@ public class RequestHTTP
         // Gestion du content de la request
         if (this.contentLength > 0)
         {
-            // TODO : GETCONTENT (byte[])
-            this.content = "TEST";
+            // Todo set encoding
+            this.content = requestArray[requestArray.length - 1].getBytes();
         }
+    }
+
+    RequestHTTP(String host, String method, String resource) {
+        this.host = host;
+        this.method = method;
+        this.resource = resource.startsWith("/") ? resource.substring(1) : resource;
     }
 
     public String getProtocol() {
@@ -100,8 +116,31 @@ public class RequestHTTP
     public int getContentLength() {
         return contentLength;
     }
+    
+    public byte[] getContent() {
+        return this.content;
+    }
+    
+    public void setContent(byte[] content) {
+        this.content = content;
+    }
 
-    public String getContent() {
-        return content;
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+    
+    @Override
+    public String toString()
+    {
+        String s = "";
+        
+        s += this.method + " " + this.resource + " " + Http.HTTP1_1 + "\r\n";
+        s += Http.HOST + ": " + this.host + "\r\n";
+
+        return s;
     }
 }

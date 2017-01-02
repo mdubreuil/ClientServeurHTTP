@@ -1,23 +1,18 @@
 
 package http;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import http.ResponseHTTP.ContentType;
+import http.Http.ContentType;
 
 /**
  * Class Server : A concurrent HTTP 1.1 server.
@@ -62,6 +57,9 @@ public class Server extends Thread
                 while ((line = in.readLine()) != null) {
                     requestString += line + "\r\n";
                     if (line.isEmpty()) {
+//                        if ((line = in.readLine()) != null) {
+//                            //requestString += "\r\n" + line + "\r\n";
+//                        }
                         break;
                     }
                 }
@@ -121,6 +119,7 @@ public class Server extends Thread
                         out.writeBytes(response.toString());
                         out.writeBytes("\r\n");
                         out.write(response.getContent());
+                        out.writeBytes("\r\n");
                         out.flush();
                         break;
                     case Http.METHOD_POST:
@@ -145,10 +144,10 @@ public class Server extends Thread
         } catch (IOException ex) {
             if(ex instanceof SocketException) {
                 // Connexion interrompue par le client
-                System.err.println("Connexion avec le client terminée");
+                System.err.println("Connexion interrompue par le client");
             }
             // Traiter l'interruption de la connexion par le client
-            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            // Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     

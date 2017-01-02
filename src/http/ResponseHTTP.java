@@ -1,55 +1,55 @@
 
 package http;
 
+import http.Http.ContentType;
+
 public class ResponseHTTP
 {
     private String code = "";
     private String contentType = "";
     private byte[] content = new byte[]{};
-    
-    public enum ContentType
-    {	
-        TEXT_PLAIN(new String[]{"txt"}, "text/plain"),
-        TEXT_HTML(new String[]{"html"}, "text/html"),
-        TEXT_CSS(new String[]{"css"}, "text/css"),
-        VIDEO_MP4(new String[]{"mp4, mpeg4"}, "video/mp4"),
-        IMAGE_JPG(new String[]{"jpg", "jpeg"}, "image/jpg"),
-        IMAGE_PNG(new String[]{"png"}, "image/png"),
-        ZIP(new String[]{"zip"}, "application/zip");
 
-        private final String[] extension;
-        private final String value;
+    ResponseHTTP(String response) {
+        // Get response as an array
+        String[] responseArray = response.split("\r\n");
 
-        private ContentType(String[] extension, String value)
-        {
-            this.extension = extension;
-            this.value = value;
+        // Get first line such as "GET resourceRelativePath HTTP/1.1"
+        String[] responseLine = responseArray[0].split(" ", 2);
+        this.code = responseLine[1].trim();
+
+        // Check headers
+        //for (int i = 1; i <= responseArray.length; i++) 
+        int i = 1;
+        while (i < responseArray.length - 1 && !responseArray[i].isEmpty()) {
+            String[] headerArray = responseArray[i].split(":");
+            String headerName = headerArray[0].trim();
+            String headerValue = headerArray[1].trim();
+
+            switch (headerName) {
+//                case Http.CONNECTION:
+//                    this.connection = headerValue;
+//                    break;
+//                case Http.CONTENT_LENGTH:
+//                    this.contentLength = Integer.valueOf(headerValue);
+//                    break;
+                case Http.CONTENT_TYPE:
+                    this.contentType = headerValue;
+                    break;
+            }
+            i++;
         }
-
-        public static String getValueByExtension(String extension)
-        {
-            String contentType = "charset=utf-8;";
-
-            if (extension.isEmpty()) return TEXT_PLAIN.value + ";" + contentType;
-//            if (extension == null || extension.equals("") || extension.equals("."))
-//                    return "text/html";
-
-            if (extension.getBytes()[0] == '.')
-                extension = extension.substring(1);
-
-            for (ContentType ct : ContentType.values())
-                for (String ext : ct.extension)
-                    if (ext.equalsIgnoreCase(extension))
-                        return ct.value + ";" + contentType;
-
-            return TEXT_HTML.value + ";" + contentType;
-        }
+        
+        // Gestion du content de la request
+        this.content = responseArray[responseArray.length - 1].getBytes();
+        // Todo set encoding
     }
+    
+    
     
     public ResponseHTTP()
     {
         this.code = Http.CODE_OK;
-        this.contentType = ContentType.TEXT_HTML.value;
+        this.contentType = ContentType.TEXT_HTML.getValue();
     }
 
     public String getCode() {
