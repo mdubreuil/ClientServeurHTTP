@@ -69,9 +69,6 @@ public class RequestHTTP
                 case Http.CONTENT_TYPE:
                     this.contentType = headerValue;
                     break;
-//                default:
-//                    System.err.println("Unknown header : " + requestArray[i]);
-//                    break;
             }
         }
         
@@ -138,7 +135,7 @@ public class RequestHTTP
     {
         String s = "";
         
-        s += this.method + " " + this.resource + " " + Http.HTTP1_1 + "\r\n";
+        s += this.method + " /" + this.resource + " " + Http.HTTP1_1 + "\r\n";
         s += Http.HOST + ": " + this.host + "\r\n";
 
         return s;

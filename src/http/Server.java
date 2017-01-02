@@ -119,7 +119,7 @@ public class Server extends Thread
                         out.writeBytes(response.toString());
                         out.writeBytes("\r\n");
                         out.write(response.getContent());
-                        out.writeBytes("\r\n");
+                        //out.writeBytes("\r\n");
                         out.flush();
                         break;
                     case Http.METHOD_POST:

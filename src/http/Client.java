@@ -13,6 +13,8 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import http.Http.ContentType;
+import java.io.Closeable;
+import java.util.Arrays;
 
 /**
  * Class Client : Navigateur Web.
@@ -20,8 +22,10 @@ import http.Http.ContentType;
  * @author Mélanie DUBREUIL
  * @author Ophélie EOUZAN
  */
-public class Client extends Thread
+public class Client implements Closeable
 {
+    private RequestHTTP request = null;
+    private ResponseHTTP response = null;
     private Socket socket = null;
     private BufferedReader in = null;
     private BufferedWriter out = null;
@@ -37,98 +41,17 @@ public class Client extends Thread
     private int code = 0;
     private Exception exception = null;
     private String errorMsg = "";
+    private boolean changed = false;
+    private String hostName = "";
+    private String resource = "";
+    private String method = Http.METHOD_GET;
     
-//    public Client(String hostName, int port)
-//    {
-//        try {
-//            
-//        } catch (IOException ex) {
-//            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-//            if (ex instanceof UnknownHostException) {
-//                code = ERR_HOST;
-//            }
-//            exception = ex;
-//        }
-//    }
-    
-    @Override
-    public void run()
+    public Client(String hostName, String relativeResourcePath)
     {
-        int port = -1;
-        String hostName, resourcePath, method = Http.METHOD_GET;
-        Scanner scanner = new Scanner(System.in);
         try {
-            while (true) {
-                System.out.print("Hôte (ex: localhost:1030) : ");
-                hostName = scanner.nextLine();
-                System.out.print("\nChemin relatif de la resource (ex: index.txt) : /");
-                resourcePath = scanner.nextLine();
-                resourcePath = "/" + resourcePath;
-                System.out.println();
-
-                if (hostName.contains(":")) {
-                    String[] host = hostName.split(":", 2);
-                    port = Integer.valueOf(host[1].trim());
-                    
-                    socket = new Socket(host[0].trim(), port);
-                } else {
-                    socket = new Socket(hostName, 80);
-                }
-
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-                
-                RequestHTTP request = new RequestHTTP(hostName, method, resourcePath);
-                
-                out.write(request.toString());
-                out.write("\r\n");
-                // Write content only if POST request, 
-                // but our client only send GET request.
-                out.flush();
-        
-                // Read response
-                String responseString = "", line;
-                while ((line = in.readLine()) != null) {
-//                    System.out.println("in");
-                    responseString += line + "\r\n";
-                    if (line.isEmpty()) {
-                        System.out.println("in in");
-                        if ((line = in.readLine()) != null) {
-                            System.out.println(line);
-                            responseString += line;// + "\r\n";
-                            if (line.isEmpty()) {
-                                responseString += "\r\n";
-                                System.out.println("break 1");
-                                break;
-                            }
-                        }
-                        System.out.println("break 2");
-                        break;
-                    }
-                }
-                System.out.println("sortie whiles");
-                
-                if (responseString.isEmpty()) {
-                    // code error
-                    //continue;
-                    return;
-                }
-                System.out.println(responseString);
-
-                ResponseHTTP response = new ResponseHTTP(responseString);
-                if (response.getContentType().contains("text")) {
-//                    System.out.println(new String(response.getContent()));
-                    // setText
-                    if (response.getContentType().contains(ContentType.TEXT_HTML.getValue())) {
-                        // setText content.getHtml()
-                    }
-                } else if (response.getContentType().contains("image")) {
-                    // setImage
-                }
-//                System.out.println(requestString);
-//                // Création de la requète HTTP
-//                RequestHTTP request = new RequestHTTP(requestString);
-            }
+            this.hostName = hostName;
+            this.resource = relativeResourcePath;
+            this.setSocket();
         } catch (IOException ex) {
             if (ex instanceof SocketException) {
                 code = ERR_SOCKET;
@@ -139,42 +62,149 @@ public class Client extends Thread
             }
             errorMsg = "Return code : " + code + " [ " + ex.getClass() + " - " + ex.getMessage() + " ] ";
             System.err.println(errorMsg);
-            //Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
-    private void get(String absoluteRemoteFilePath)
+    private void setSocket() throws IOException
+    {
+        if (hostName.contains(":")) {
+            String[] host = hostName.split(":", 2);
+            int port = Integer.valueOf(host[1].trim());
+
+            socket = new Socket(host[0].trim(), port);
+        } else {
+            socket = new Socket(hostName, 80);
+        }
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+        changed = false;
+    }
+
+//    @Override
+//    public void run()
+    public void get()
     {
         try {
-            // Client GET request
-            String hostName = socket.getInetAddress().getHostName();
-            int port = socket.getPort();
-            out.write("GET " + absoluteRemoteFilePath + " HTTP/1.1\r\n");
-            out.write("Host: " + hostName+":"+port);
-            out.write("Accept-Encoding: text/html, image/gif, image/jpeg");
-            out.write("Accept-Language: fr");
+            if (this.changed) {
+                this.setSocket();
+            }
+            this.request = new RequestHTTP(hostName, method, resource);
+
+            out.write(request.toString());
             out.write("\r\n");
+            // Write content only if POST request, 
+            // but our client only send GET request.
+            out.flush();
+
+            // Read response
+            String headerString = "", contentString = "", line;
+            boolean isHeader = true;
+            //while (true) {
+            while (isHeader) {
+                line = in.readLine();
+                if (line == null) break;
+                if (line.length() == 0) {
+                    isHeader = false; // end of header
+                }
+                headerString += line + "\r\n";
+                System.out.println(line);
+                //} else {
+//                    if ((datasize = in.read(data)) == -1) {
+//                        System.out.println("break");
+//                        break;
+//                    }
+//                    
+//                    line = in.readLine();
+//                    if (line == null) {
+//                        System.out.println("break 2");
+//                        break;
+//                    }
+//                    if (line.length() == 0) {
+//                        System.out.println("break 3");
+//                        //break;
+//                    }
+//                    contentString += line + "\r\n";
+                //}
+//                System.out.println(line);
+            }
+            System.out.println(headerString);
+            if (!headerString.isEmpty()) {
+                this.response = new ResponseHTTP(headerString, contentString);
+            }
             
-            out.write("Date: Fri, 31 Dec 1999 23:59:59 GMT\r\n");
-            out.write("Server: Apache/0.8.4\r\n");
-            out.write("Content-Type: text/html\r\n");
-            out.write("Content-Length: 59\r\n");
-            out.write("Expires: Sat, 01 Jan 2000 00:59:59 GMT\r\n");
-            out.write("Last-modified: Fri, 09 Aug 1996 14:21:40 GMT\r\n");
-            out.write("\r\n");
-            out.write("<TITLE>Exemple</TITLE>");
-            out.write("<P>Ceci est une page d'exemple.</P>");
+            char[] data = new char[1000000];
+            int length = response.getContentLength();
+            int datasize = 0, total = 0;
+            while (total < length) {
+                //System.out.println("content lentgh :" + total);
+                if ((datasize = in.read(data)) == -1) {
+                    break;
+                }
+                total += datasize;
+            }
+            contentString = new String(data, 0, length);
+            System.out.println(contentString);
+            this.response.setContent(contentString.getBytes());
             out.flush();
         } catch (IOException ex) {
+//            if (ex instanceof SocketException) {
+//                code = ERR_SOCKET;
+//            } else if (ex instanceof UnknownHostException) {
+//                code = ERR_HOST;
+//            } else {
+//                code = ERR_PACKET;
+//            }
+//            errorMsg = "Return code : " + code + " [ " + ex.getClass() + " - " + ex.getMessage() + " ] ";
+//            System.err.println(errorMsg);
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-            code = ERR_STREAM;
         }
     }
-    
-    public static void main(String[] args)
-    {
-        //Client client = new Client();
-        System.out.println("Launching client...\n");
-        (new Client()).start();
+
+    public RequestHTTP getRequest() {
+        return request;
+    }
+
+    public void setRequest(RequestHTTP request) {
+        this.request = request;
+    }
+
+    public ResponseHTTP getResponse() {
+        return response;
+    }
+
+    public void setResponse(ResponseHTTP response) {
+        this.response = response;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.changed = !this.request.equals(request) || this.changed;
+        this.hostName = hostName;
+    }
+
+    public String getResource() {
+        return resource;
+    }
+
+    public void setResource(String resource) {
+        this.resource = resource;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    @Override
+    public void close() throws IOException {
+        this.socket.close();
+        this.in.close();
+        this.out.close();
     }
 }
