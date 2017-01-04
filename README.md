@@ -15,7 +15,7 @@ A simple client-server based on HTTP 1.1
 *TODO:*
 - [x] Minimalist server :
  - [x] Handles concurrent requests
- - [x] Test on existent browsers : Firefox, Internet Explorer
+ - [x] Test on existent browsers : Firefox, Internet Explorer, Vivaldi
 - [ ] Minimalist client :
  - [ ] Read response body correctly
  - [ ] Save response body on local file (then display the file)
